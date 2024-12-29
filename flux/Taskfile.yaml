@@ -1,0 +1,15 @@
+version: '3'
+
+tasks:
+  install:
+    requires:
+      vars: [GITHUB_TOKEN]
+    cmds:
+      - >
+          flux bootstrap github
+          --token-auth
+          --owner=sandinv
+          --repository=labs
+          --branch=master
+          --path=flux/manifests
+          --personal
