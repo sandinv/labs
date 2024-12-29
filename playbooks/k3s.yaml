@@ -1,0 +1,50 @@
+---
+- name: launch a k3s cluster
+  hosts: localhost
+  connection: local
+  become_method: sudo
+
+  tasks:
+    - name: Install required packages
+      community.general.pacman:
+        name: [curl, wget]
+        state: present
+      become: yes
+
+    - name: create rancher k3s config directory
+      ansible.builtin.file:
+        path: /etc/rancher/k3s/
+        state: directory
+        mode: '0755'
+      become: true
+
+    - name: copy rancher k3s config
+      ansible.builtin.template:
+        src: templates/k3s-config.yaml.j2
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        group: wheel
+        mode: '0644'
+      become: true
+
+    - name: Download and install K3s
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | sh -
+      become: true
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Ensure .kube directory exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.kube"
+        state: directory
+        owner: "{{ ansible_env.USER }}"
+        group: "{{ ansible_env.USER }}"
+        mode: '0700'
+
+    - name: Fetch the kubeconfig file
+      ansible.builtin.fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "{{ ansible_env.HOME}}/.kube/k3s.yaml"
+        flat: yes
+      become: true
